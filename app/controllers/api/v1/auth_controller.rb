@@ -1,4 +1,4 @@
-class AuthController < ApplicationController
+class Api::V1::AuthController < ApplicationController
     
     def hola
         render json: {message: "Hola mundo"}
