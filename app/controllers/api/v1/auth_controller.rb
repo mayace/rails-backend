@@ -5,6 +5,7 @@ class Api::V1::AuthController < ApplicationController
     end
 
     def login
+        ActionCable.server.broadcast("some_channel", "login");
         @user = User.find_by(username: params[:username])
         if @user && @user.authenticate(params[:password])
             token = encode_token({user_id: @user.id})
