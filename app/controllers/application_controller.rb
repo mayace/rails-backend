@@ -35,4 +35,12 @@ class ApplicationController < ActionController::API
         render json: { message: "Please log in"}, status: :unauthorized unless logged_in?
     end
 
+    def get_cognito()
+        Aws::CognitoIdentityProvider::Client.new(
+            region: "us-east-1",
+            credentials: Aws::Credentials.new(ENV["COGNITO_ID"], ENV["COGNITO_SECRET"])
+        )
+    end
+
+
 end

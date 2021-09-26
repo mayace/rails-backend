@@ -16,10 +16,16 @@ class Api::V1::UsersController < ApplicationController
 
   # POST /users
   def create
-    @user = User.new(user_params)
+    puts params
+    puts
+
+    @user = User.new({
+       username: params[:username],
+       password: params[:password]
+      })
 
     if @user.save
-      render json: @user, status: :created, location: @user
+      render json: @user, status: :created
     else
       render json: @user.errors, status: :unprocessable_entity
     end
@@ -47,6 +53,21 @@ class Api::V1::UsersController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def user_params
-      params.fetch(:user, {})
+      params.fetch(:user, {}).permit!
     end
+
+    def cognito_create_user(params)
+      params.each{ | item| puts item }
+
+      cognito = get_cognito()
+      cognito.admin_create_user({
+        user_pool_id: "us-east-1_uAuAWzwr6",
+        username: "c4",
+        user_attributes: [
+            {name: "email", value: "c4@semi.dev"},
+        ],
+        temporary_password: "1234567"
+      })
+    end
+
 end
