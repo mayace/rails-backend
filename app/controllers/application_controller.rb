@@ -42,5 +42,25 @@ class ApplicationController < ActionController::API
         )
     end
 
+    def get_hash_secret(username)
+        client_secret = ENV["COGNITO_CLIENT_SECRET"]
+        client_id = ENV["COGNITO_CLIENT_ID"]
+        # puts client_secret, client_id
+        data = username + client_id
+        puts data +"\n"
+        digest = OpenSSL::HMAC.digest('SHA256', client_secret, username + client_id)
+        Base64.strict_encode64(digest)
+    end
+
+    def get_cognito_settings()
+        {
+            :id => ENV["COGNITO_ID"],
+            :secret =>  ENV["COGNITO_SECRET"],
+            :client_id => ENV["COGNITO_CLIENT_ID"],
+            :client_secret => ENV["COGNITO_CLIENT_SECRET"],
+        }
+    #     {
+    #     }
+    end
 
 end

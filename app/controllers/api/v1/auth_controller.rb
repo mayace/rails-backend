@@ -15,23 +15,39 @@ class Api::V1::AuthController < ApplicationController
         end
     end
 
-    def get_hash_secret(username)
-        client_secret = ENV["COGNITO_CLIENT_SECRET"]
-        client_id = ENV["COGNITO_CLIENT_ID"]
-        # puts client_secret, client_id
-        data = username + client_id
-        puts data +"\n"
-        digest = OpenSSL::HMAC.digest('SHA256', client_secret, username + client_id)
-        Base64.strict_encode64(digest)
+
+    def cognito_signup()
     end
 
-    def cognito_login
+    def cognito_confirm()
+        username = params[:username]
+        code = params[:code]
+        
+        cognito_settings = get_cognito_settings()
+        hash_secret = get_hash_secret(username)
+        options = {
+            client_id: cognito_settings[:client_id], # required
+            secret_hash: hash_secret,
+            username: username, # required
+            confirmation_code: code, # required
+        }
+        cognito = get_cognito()
+
+        resp = cognito.confirm_sign_up(options)
+
+        puts resp
+    rescue Aws::CognitoIdentityProvider::Errors::CodeMismatchException => err
+        render json: { success: false, message: "#{err}"}
+
+    end
+
+    def cognito_signin()
         cognito = get_cognito()
         username = params[:auth][:username]
         password = params[:auth][:password]
         hash_secret = get_hash_secret(username)
         # puts hash_secret
-        res = cognito.admin_initiate_auth({
+        resp = cognito.admin_initiate_auth({
             user_pool_id: ENV["COGNITO_POOL_ID"], # required
             client_id: ENV["COGNITO_CLIENT_ID"], # required
             auth_flow: "ADMIN_USER_PASSWORD_AUTH",
@@ -42,11 +58,11 @@ class Api::V1::AuthController < ApplicationController
             }
         })
 
-        # puts res
-        render json: { success: true, data: params}
+
+        render json: { success: true, data: resp.authentication_result}
+
+        rescue Aws::CognitoIdentityProvider::Errors::UserNotConfirmedException => err
+            render json: {success: false, message: "#{err}"}
     end
-
-
-
 
 end
