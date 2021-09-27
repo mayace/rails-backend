@@ -8,6 +8,11 @@ class ApplicationController < ActionController::API
         request.headers["Authorization"]
     end
 
+    def get_bearer_token
+        auth_header.split(" ")[1]
+    end 
+
+
     def decoded_token
         if auth_header
             token = auth_header.split(" ")[1]
@@ -28,12 +33,33 @@ class ApplicationController < ActionController::API
     end
 
     def logged_in?
-        !!logged_in_user
+        !!token_valid
     end
 
     def authorized
         render json: { message: "Please log in"}, status: :unauthorized unless logged_in?
     end
+
+
+    def token_valid
+        # p get_bearer_token
+        if get_bearer_token
+            region = "us-east-1"
+            cognito_settings = get_cognito_settings()
+
+            url = URI.parse("https://cognito-idp.#{region}.amazonaws.com/#{cognito_settings[:pool_id]}/.well-known/jwks.json")
+            jwk_str = Net::HTTP.get_response(url).body
+            # p url
+            jwk = JSON.parse(jwk_str, symbolize_names: true)
+            JWT.decode(get_bearer_token,nil, true, {jwks: jwk, algorithms: ["RS256"]})
+        end
+    end
+
+
+    def cognito_authorized
+        render json: { success: false, message: "Please sign in"}, status: :unauthorized unless logged_in?
+    end
+
 
     def get_cognito()
         Aws::CognitoIdentityProvider::Client.new(
@@ -56,11 +82,10 @@ class ApplicationController < ActionController::API
         {
             :id => ENV["COGNITO_ID"],
             :secret =>  ENV["COGNITO_SECRET"],
+            :pool_id => ENV["COGNITO_POOL_ID"],
             :client_id => ENV["COGNITO_CLIENT_ID"],
             :client_secret => ENV["COGNITO_CLIENT_SECRET"],
         }
-    #     {
-    #     }
     end
 
 end

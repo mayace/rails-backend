@@ -1,6 +1,6 @@
 class Api::V1::UsersController < ApplicationController
   before_action :set_user, only: [:show, :update, :destroy]
-  before_action :authorized, only: [:index]
+  before_action :cognito_authorized, only: [:index]
 
   # GET /users
   def index
